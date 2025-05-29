@@ -48,7 +48,7 @@ def get_weather(args):
     return get_best_result_snippet(location)
 
 # Azure GPT config
-github_token = "GITHUB API"
+github_token = "APIKEY"
 endpoint = "https://models.github.ai/inference"
 model_name = "openai/gpt-4o-mini"
 client = ChatCompletionsClient(endpoint=endpoint, credential=AzureKeyCredential(github_token))
@@ -114,7 +114,24 @@ def main_loop():
         # Kullanıcının sesi algıl
 
             # Get user input
-        user_input = str(input(": "))
+        # Block listening while TTS speaking
+        if is_playing.is_set():
+            # If user input arrives, interrupt TTS
+            if not recog_queue.empty():
+                stop_tts()
+                is_playing.clear()
+            else:
+                time.sleep(0.05)
+                continue
+
+        # Get user input
+        if not recog_queue.empty():
+            user_input = recog_queue.get().strip()
+            print(f"User: {user_input}")
+            history.append(UserMessage(content=user_input))
+        else:
+            time.sleep(0.05)
+            continue
         history.append(UserMessage(content=user_input))
 
         # Özel komut: kamera analizi
